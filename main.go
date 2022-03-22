@@ -128,7 +128,6 @@ func (b *VaultBackup) writeSecrets(secrets map[string]interface{}) error {
 	for key, element := range secrets {
 
 		secretPath = key[0:strings.LastIndex(key, "/")]
-		//fmt.Println("Path:", secretPath)
 		keyLength = len(key)
 
 		secretMap[key[strings.LastIndex(key, "/")+1:keyLength]] = element.(string)
@@ -137,14 +136,12 @@ func (b *VaultBackup) writeSecrets(secrets map[string]interface{}) error {
 			secretNumber++
 			fmt.Printf("Write secret %d\n", secretNumber)
 			secretMapWrap["data"] = secretMap
-			fmt.Printf("%v\n", secretMapWrap)
 			// call write method
 			_, err := b.client.Logical().Write(b.pathPrefix+currentPath, secretMapWrap)
 
 			if err != nil {
 				return err
 			}
-
 		}
 
 		currentPath = secretPath
@@ -268,5 +265,4 @@ func main() {
 
 		log.Println("Backup done! ;)")
 	}
-
 }
