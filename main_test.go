@@ -1,53 +1,47 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"strings"
+	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadJson(t *testing.T) {
+
+	filename := "vault.test.json"
 	client, err := NewBackup()
 	if err != nil {
 		log.Fatal(err)
 	}
-	//jsonS := make(map[string]interface{})
 
-	jsonS, _ := client.readJson("vault.backup.json")
+	jsonMap := make(map[string]string)
 
-	if jsonS == nil {
-		t.Errorf("can't read json")
+	jsonMap["deployment/secret1/key1"] = "1234"
+	jsonMap["deployment/secret1/key2"] = "abc"
+	jsonMap["deployment/secret2/key1"] = "5678"
+	jsonMap["deployment/secret2/key2"] = "efg"
+
+	client.secrets = jsonMap
+	client.output = "json"
+	client.filename = filename
+
+	if err := client.write(); err != nil {
+		log.Printf("Could not write file\n")
+		log.Printf("%v", err)
+		t.Fail()
 	}
 
-	//fmt.Printf("%v", jsonS)
-	currentPath := ""
-	secretMap := make(map[string]interface{})
-	secretMapWrap := make(map[string]interface{})
-	secretPath := ""
-	keyLength := 0
-	secretNumber := 0
+	mapSecrets, err := client.readJson("vault.test.json")
 
-	for key, element := range jsonS {
-		//fmt.Println("Key:", key, "=>", "Element:", element)
-		fmt.Println()
-
-		secretPath = key[0:strings.LastIndex(key, "/")]
-		//fmt.Println("Path:", secretPath)
-		keyLength = len(key)
-
-		secretMap[key[strings.LastIndex(key, "/")+1:keyLength]] = element.(string)
-
-		if currentPath != secretPath && currentPath != "" {
-			// if secret != "" {
-			// call write method
-			secretNumber++
-			fmt.Printf("Write secret %d \n", secretNumber)
-			fmt.Println(currentPath)
-			secretMapWrap["data"] = secretMap
-			fmt.Printf("%v\n", secretMapWrap)
-		}
-
-		currentPath = secretPath
+	if err != nil {
+		log.Printf("Could not read Json file\n")
+		log.Printf("%v", err)
+		t.Fail()
 	}
+
+	assert.Equal(t, mapSecrets["deployment/secret1/key1"], jsonMap["deployment/secret1/key1"])
+
+	os.Remove(filename)
 }
