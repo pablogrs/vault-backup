@@ -138,6 +138,7 @@ func (b *VaultBackup) writeSecrets(secrets map[string]interface{}) error {
 			secretMapWrap["data"] = secretMap
 			// call write method
 			_, err := b.client.Logical().Write(b.pathPrefix+currentPath, secretMapWrap)
+			secretMap = make(map[string]interface{})
 
 			if err != nil {
 				return err
