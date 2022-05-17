@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	vault "github.com/hashicorp/vault/api"
@@ -119,18 +120,23 @@ func (b *VaultBackup) readJson(filename string) (map[string]interface{}, error) 
 
 func (b *VaultBackup) writeSecrets(secrets map[string]interface{}) error {
 	secretMap := make(map[string]interface{})
+	//secretMapWrite := make(map[string]interface{})
 	secretMapWrap := make(map[string]interface{})
 	currentPath := ""
 	secretPath := ""
 	keyLength := 0
 	secretNumber := 0
 
-	for key, element := range secrets {
+	keys := make([]string, 0, len(secrets))
+	for k := range secrets {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
 
 		secretPath = key[0:strings.LastIndex(key, "/")]
 		keyLength = len(key)
-
-		secretMap[key[strings.LastIndex(key, "/")+1:keyLength]] = element.(string)
 
 		if currentPath != secretPath && currentPath != "" {
 			secretNumber++
@@ -143,8 +149,10 @@ func (b *VaultBackup) writeSecrets(secrets map[string]interface{}) error {
 			if err != nil {
 				return err
 			}
+
 		}
 
+		secretMap[key[strings.LastIndex(key, "/")+1:keyLength]] = secrets[key].(string)
 		currentPath = secretPath
 	}
 
@@ -240,7 +248,7 @@ func main() {
 
 	if process == "write" {
 		client.readJson(client.filename)
-		jsonS, err := client.readJson("vault.backup.json")
+		jsonS, err := client.readJson(client.filename)
 
 		if err != nil {
 			log.Fatal("Can't read Json to Write secrets")
